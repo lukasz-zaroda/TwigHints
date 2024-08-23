@@ -1,0 +1,38 @@
+name: Test
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+  packages: read
+jobs:
+
+  test:
+    name: Testing code.
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - "8.1"
+          - "8.2"
+          - "8.3"
+        dependency-versions:
+          - "lowest"
+          - "highest"
+    steps:
+      - uses: actions/checkout@v3.5.3
+      - uses: php-actions/composer@v6
+        with:
+          command: ''
+          php_version: ${{ matrix.php-version }}
+      - name: Installing environment dependencies.
+        run: sudo apt install make bash
+      - name: Installing composer lowest versions dependencies.
+        run: composer update --prefer-lowest --prefer-stable
+        if: matrix.dependency-versions == 'lowest'
+      - name: Installing composer highest versions dependencies.
+        run: composer update --prefer-stable
+        if: matrix.dependency-versions == 'highest'
+      - name: Running tests.
+        run: make tests
+      - name: Linting check.
+        run: make lint
